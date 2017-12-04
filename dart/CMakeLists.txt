@@ -18,6 +18,7 @@ endif()
 configure_file(${DART_CONFIG_HPP_IN} ${DART_CONFIG_HPP_OUT} @ONLY)
 install(FILES ${DART_CONFIG_HPP_OUT} DESTINATION include/dart)
 
+add_compile_options(-std=c++11) # CMake 2.8.12 or newer
 #===============================================================================
 # Source directories
 #===============================================================================
@@ -133,6 +134,7 @@ target_include_directories(
     ${EIGEN3_INCLUDE_DIRS}
     ${CCD_INCLUDE_DIRS}
     ${FCL_INCLUDE_DIRS}
+    ${OCTOMAP_INCLUDE_DIRS}
     ${ASSIMP_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
 )
@@ -141,6 +143,7 @@ target_link_libraries(
   PUBLIC
     ${CCD_LIBRARIES}
     ${FCL_LIBRARIES}
+    ${OCTOMAP_LIBRARIES}
     ${ASSIMP_LIBRARIES}
     ${Boost_LIBRARIES}
     ${PROJECT_NAME}-external-odelcpsolver

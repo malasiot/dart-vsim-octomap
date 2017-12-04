@@ -29,7 +29,7 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dart/collision/fcl/FCLCollisionDetector.hpp"
+#include "FCLCollisionDetector.hpp"
 
 #include <assimp/scene.h>
 
@@ -41,7 +41,6 @@
 #include <fcl/broadphase/broadphase.h>
 #include <fcl/shape/geometric_shapes.h>
 #include <fcl/shape/geometric_shape_to_BVH_model.h>
-#include <fcl/octree.h>
 
 #include "dart/common/Console.hpp"
 #include "dart/collision/CollisionObject.hpp"
@@ -60,7 +59,6 @@
 #include "dart/dynamics/PlaneShape.hpp"
 #include "dart/dynamics/MeshShape.hpp"
 #include "dart/dynamics/SoftMeshShape.hpp"
-#include "dart/dynamics/CloudShape.hpp"
 
 namespace dart {
 namespace collision {
@@ -144,7 +142,7 @@ Contact convertContact(
 
 /// Collision data stores the collision request and the result given by
 /// collision algorithm.
-struct FCLCollisionCallbackData
+struct FCLOctomapCollisionCallbackData
 {
   /// FCL collision request
   fcl::CollisionRequest fclRequest;
@@ -162,9 +160,9 @@ struct FCLCollisionCallbackData
   /// mResult is nullptr; otherwise the actual collision result is in mResult.
   bool foundCollision;
 
-  FCLCollisionDetector::PrimitiveShape primitiveShapeType;
+  FCLOctomapCollisionDetector::PrimitiveShape primitiveShapeType;
 
-  FCLCollisionDetector::ContactPointComputationMethod
+  FCLOctomapCollisionDetector::ContactPointComputationMethod
   contactPointComputationMethod;
 
   /// Whether the collision iteration can stop
@@ -179,13 +177,13 @@ struct FCLCollisionCallbackData
   }
 
   /// Constructor
-  FCLCollisionCallbackData(
+  FCLOctomapCollisionCallbackData(
       const CollisionOption& option,
       CollisionResult* result,
-      FCLCollisionDetector::PrimitiveShape type
-          = FCLCollisionDetector::MESH,
-      FCLCollisionDetector::ContactPointComputationMethod method
-          = FCLCollisionDetector::DART)
+      FCLOctomapCollisionDetector::PrimitiveShape type
+          = FCLOctomapCollisionDetector::MESH,
+      FCLOctomapCollisionDetector::ContactPointComputationMethod method
+          = FCLOctomapCollisionDetector::DART)
     : option(option),
       result(result),
       foundCollision(false),
@@ -644,53 +642,35 @@ fcl::BVHModel<BV>* createSoftMesh(const aiMesh* _mesh)
 
 } // anonymous namespace
 
-//==============================================================================
-template<class BV>
-fcl::OcTree* createOctomap(const std::vector<Eigen::Vector3f> &pts)
-{
-    octomap::Pointcloud cloud ;
-
-    for( uint i=0 ; i<pts.size() ; i++ ) {
-        cloud.push_back(pts[i].x(), pts[i].y(), pts[i].z());
-    }
-
-    std::shared_ptr<octomap::OcTree> octree(new octomap::OcTree(0.001)) ;
-
-    octree->insertPointCloud(cloud, octomap::point3d(0, 0, 0));
-
-    fcl::OcTree* tree = new fcl::OcTree(octree);
-
-    return tree ;
-}
 
 
 //==============================================================================
-std::shared_ptr<FCLCollisionDetector> FCLCollisionDetector::create()
+std::shared_ptr<FCLOctomapCollisionDetector> FCLOctomapCollisionDetector::create()
 {
-  return std::shared_ptr<FCLCollisionDetector>(new FCLCollisionDetector());
+  return std::shared_ptr<FCLOctomapCollisionDetector>(new FCLOctomapCollisionDetector());
 }
 
 //==============================================================================
-FCLCollisionDetector::~FCLCollisionDetector()
+FCLOctomapCollisionDetector::~FCLOctomapCollisionDetector()
 {
   assert(mShapeMap.empty());
 }
 
 //==============================================================================
 std::shared_ptr<CollisionDetector>
-FCLCollisionDetector::cloneWithoutCollisionObjects()
+FCLOctomapCollisionDetector::cloneWithoutCollisionObjects()
 {
-  return FCLCollisionDetector::create();
+  return FCLOctomapCollisionDetector::create();
 }
 
 //==============================================================================
-const std::string& FCLCollisionDetector::getType() const
+const std::string& FCLOctomapCollisionDetector::getType() const
 {
   return getStaticType();
 }
 
 //==============================================================================
-const std::string& FCLCollisionDetector::getStaticType()
+const std::string& FCLOctomapCollisionDetector::getStaticType()
 {
   static const std::string type = "fcl";
   return type;
@@ -698,17 +678,17 @@ const std::string& FCLCollisionDetector::getStaticType()
 
 //==============================================================================
 std::unique_ptr<CollisionGroup>
-FCLCollisionDetector::createCollisionGroup()
+FCLOctomapCollisionDetector::createCollisionGroup()
 {
   return common::make_unique<FCLCollisionGroup>(shared_from_this());
 }
 
 //==============================================================================
-static bool checkGroupValidity(FCLCollisionDetector* cd, CollisionGroup* group)
+static bool checkGroupValidity(FCLOctomapCollisionDetector* cd, CollisionGroup* group)
 {
   if (cd != group->getCollisionDetector().get())
   {
-    dterr << "[FCLCollisionDetector::collide] Attempting to check collision "
+    dterr << "[FCLOctomapCollisionDetector::collide] Attempting to check collision "
           << "for a collision group that is created from a different collision "
           << "detector instance.\n";
 
@@ -719,7 +699,7 @@ static bool checkGroupValidity(FCLCollisionDetector* cd, CollisionGroup* group)
 }
 
 //==============================================================================
-bool FCLCollisionDetector::collide(
+bool FCLOctomapCollisionDetector::collide(
     CollisionGroup* group,
     const CollisionOption& option,
     CollisionResult* result)
@@ -736,7 +716,7 @@ bool FCLCollisionDetector::collide(
   auto casted = static_cast<FCLCollisionGroup*>(group);
   casted->updateEngineData();
 
-  FCLCollisionCallbackData collData(
+  FCLOctomapCollisionCallbackData collData(
         option, result, mPrimitiveShapeType,
         mContactPointComputationMethod);
 
@@ -746,7 +726,7 @@ bool FCLCollisionDetector::collide(
 }
 
 //==============================================================================
-bool FCLCollisionDetector::collide(
+bool FCLOctomapCollisionDetector::collide(
     CollisionGroup* group1, CollisionGroup* group2,
     const CollisionOption& option, CollisionResult* result)
 {
@@ -767,7 +747,7 @@ bool FCLCollisionDetector::collide(
   casted1->updateEngineData();
   casted2->updateEngineData();
 
-  FCLCollisionCallbackData collData(
+  FCLOctomapCollisionCallbackData collData(
         option, result, mPrimitiveShapeType,
         mContactPointComputationMethod);
 
@@ -780,7 +760,7 @@ bool FCLCollisionDetector::collide(
 }
 
 //==============================================================================
-double FCLCollisionDetector::distance(
+double FCLOctomapCollisionDetector::distance(
     CollisionGroup* group,
     const DistanceOption& option,
     DistanceResult* result)
@@ -802,7 +782,7 @@ double FCLCollisionDetector::distance(
 }
 
 //==============================================================================
-double FCLCollisionDetector::distance(
+double FCLOctomapCollisionDetector::distance(
     CollisionGroup* group1,
     CollisionGroup* group2,
     const DistanceOption& option,
@@ -833,56 +813,56 @@ double FCLCollisionDetector::distance(
 }
 
 //==============================================================================
-void FCLCollisionDetector::setPrimitiveShapeType(
-    FCLCollisionDetector::PrimitiveShape type)
+void FCLOctomapCollisionDetector::setPrimitiveShapeType(
+    FCLOctomapCollisionDetector::PrimitiveShape type)
 {
   if (type == PRIMITIVE)
   {
-    dtwarn << "[FCLCollisionDetector::setPrimitiveShapeType] You chose to use "
+    dtwarn << "[FCLOctomapCollisionDetector::setPrimitiveShapeType] You chose to use "
            << "FCL's primitive shape collision feature while it's not complete "
            << "(at least until 0.4.0) especially in use of dynamics "
            << "simulation. It's recommended to use mesh even for primitive "
            << "shapes by settting "
-           << "FCLCollisionDetector::setPrimitiveShapeType(MESH).\n";
+           << "FCLOctomapCollisionDetector::setPrimitiveShapeType(MESH).\n";
   }
 
   mPrimitiveShapeType = type;
 }
 
 //==============================================================================
-FCLCollisionDetector::PrimitiveShape
-FCLCollisionDetector::getPrimitiveShapeType() const
+FCLOctomapCollisionDetector::PrimitiveShape
+FCLOctomapCollisionDetector::getPrimitiveShapeType() const
 {
   return mPrimitiveShapeType;
 }
 
 //==============================================================================
-void FCLCollisionDetector::setContactPointComputationMethod(
-    FCLCollisionDetector::ContactPointComputationMethod method)
+void FCLOctomapCollisionDetector::setContactPointComputationMethod(
+    FCLOctomapCollisionDetector::ContactPointComputationMethod method)
 {
   if (method == FCL)
   {
-    dtwarn << "[FCLCollisionDetector::setContactPointComputationMethod] You "
+    dtwarn << "[FCLOctomapCollisionDetector::setContactPointComputationMethod] You "
            << "chose to use FCL's built in contact point computation while"
            << "it's buggy (see https://github.com/flexible-collision-library/"
            << "fcl/issues/106) at least until 0.4.0. It's recommended to use "
            << "DART's implementation for the contact point computation by "
            << "setting "
-           << "FCLCollisionDetector::setContactPointComputationMethod(DART).\n";
+           << "FCLOctomapCollisionDetector::setContactPointComputationMethod(DART).\n";
   }
 
   mContactPointComputationMethod = method;
 }
 
 //==============================================================================
-FCLCollisionDetector::ContactPointComputationMethod
-FCLCollisionDetector::getContactPointComputationMethod() const
+FCLOctomapCollisionDetector::ContactPointComputationMethod
+FCLOctomapCollisionDetector::getContactPointComputationMethod() const
 {
   return mContactPointComputationMethod;
 }
 
 //==============================================================================
-FCLCollisionDetector::FCLCollisionDetector()
+FCLOctomapCollisionDetector::FCLOctomapCollisionDetector()
   : CollisionDetector(),
     mPrimitiveShapeType(MESH),
     mContactPointComputationMethod(DART)
@@ -891,7 +871,7 @@ FCLCollisionDetector::FCLCollisionDetector()
 }
 
 //==============================================================================
-std::unique_ptr<CollisionObject> FCLCollisionDetector::createCollisionObject(
+std::unique_ptr<CollisionObject> FCLOctomapCollisionDetector::createCollisionObject(
     const dynamics::ShapeFrame* shapeFrame)
 {
   auto fclCollGeom = claimFCLCollisionGeometry(shapeFrame->getShape());
@@ -902,7 +882,7 @@ std::unique_ptr<CollisionObject> FCLCollisionDetector::createCollisionObject(
 
 //==============================================================================
 fcl_shared_ptr<fcl::CollisionGeometry>
-FCLCollisionDetector::claimFCLCollisionGeometry(
+FCLOctomapCollisionDetector::claimFCLCollisionGeometry(
     const dynamics::ConstShapePtr& shape)
 {
   const auto search = mShapeMap.find(shape);
@@ -925,9 +905,9 @@ FCLCollisionDetector::claimFCLCollisionGeometry(
 
 //==============================================================================
 fcl_shared_ptr<fcl::CollisionGeometry>
-FCLCollisionDetector::createFCLCollisionGeometry(
+FCLOctomapCollisionDetector::createFCLCollisionGeometry(
     const dynamics::ConstShapePtr& shape,
-    FCLCollisionDetector::PrimitiveShape type,
+    FCLOctomapCollisionDetector::PrimitiveShape type,
     const FCLCollisionGeometryDeleter& deleter)
 {
   using dynamics::Shape;
@@ -949,7 +929,7 @@ FCLCollisionDetector::createFCLCollisionGeometry(
     auto* sphere = static_cast<const SphereShape*>(shape.get());
     const auto radius = sphere->getRadius();
 
-    if (FCLCollisionDetector::PRIMITIVE == type)
+    if (FCLOctomapCollisionDetector::PRIMITIVE == type)
       geom = new fcl::Sphere(radius);
     else
       geom = createEllipsoid<fcl::OBBRSS>(radius*2.0, radius*2.0, radius*2.0);
@@ -961,7 +941,7 @@ FCLCollisionDetector::createFCLCollisionGeometry(
     auto box = static_cast<const BoxShape*>(shape.get());
     const Eigen::Vector3d& size = box->getSize();
 
-    if (FCLCollisionDetector::PRIMITIVE == type)
+    if (FCLOctomapCollisionDetector::PRIMITIVE == type)
       geom = new fcl::Box(size[0], size[1], size[2]);
     else
       geom = createCube<fcl::OBBRSS>(size[0], size[1], size[2]);
@@ -973,7 +953,7 @@ FCLCollisionDetector::createFCLCollisionGeometry(
     auto ellipsoid = static_cast<const EllipsoidShape*>(shape.get());
     const Eigen::Vector3d& size = ellipsoid->getSize();
 
-    if (FCLCollisionDetector::PRIMITIVE == type)
+    if (FCLOctomapCollisionDetector::PRIMITIVE == type)
     {
 #if FCL_VERSION_AT_LEAST(0,4,0)
       geom = new fcl::Ellipsoid(FCLTypes::convertVector3(size * 0.5));
@@ -994,7 +974,7 @@ FCLCollisionDetector::createFCLCollisionGeometry(
     const auto radius = cylinder->getRadius();
     const auto height = cylinder->getHeight();
 
-    if (FCLCollisionDetector::PRIMITIVE == type)
+    if (FCLOctomapCollisionDetector::PRIMITIVE == type)
     {
       geom = createCylinder<fcl::OBBRSS>(radius, radius, height, 16, 16);
       // TODO(JS): We still need to use mesh for cylinder because FCL 0.4.0
@@ -1009,7 +989,7 @@ FCLCollisionDetector::createFCLCollisionGeometry(
   }
   else if (PlaneShape::getStaticType() == shapeType)
   {
-    if (FCLCollisionDetector::PRIMITIVE == type)
+    if (FCLOctomapCollisionDetector::PRIMITIVE == type)
     {
       assert(dynamic_cast<const PlaneShape*>(shape.get()));
       auto                  plane = static_cast<const PlaneShape*>(shape.get());
@@ -1021,8 +1001,8 @@ FCLCollisionDetector::createFCLCollisionGeometry(
     else
     {
       geom = createCube<fcl::OBBRSS>(1000.0, 0.0, 1000.0);
-      dtwarn << "[FCLCollisionDetector] PlaneShape is not supported by "
-             << "FCLCollisionDetector. We create a thin box mesh insted, where "
+      dtwarn << "[FCLOctomapCollisionDetector] PlaneShape is not supported by "
+             << "FCLOctomapCollisionDetector. We create a thin box mesh insted, where "
              << "the size is [1000 0 1000].\n";
     }
   }
@@ -1045,17 +1025,9 @@ FCLCollisionDetector::createFCLCollisionGeometry(
 
     geom = createSoftMesh<fcl::OBBRSS>(aiMesh);
   }
-  else if (dynamics::CloudShape::getStaticType() == shapeType)
-  {
-    assert(dynamic_cast<const dynamics::CloudShape*>(shape.get()));
-
-    auto cloudShape = static_cast<const dynamics::CloudShape*>(shape.get());
-
-    geom = createOctomap<fcl::OBBRSS>(cloudShape->pts());
-  }
   else
   {
-    dterr << "[FCLCollisionDetector::createFCLCollisionGeometry] "
+    dterr << "[FCLOctomapCollisionDetector::createFCLCollisionGeometry] "
           << "Attempting to create an unsupported shape type ["
           << shapeType << "]. Creating a sphere with 0.1 radius "
           << "instead.\n";
@@ -1067,10 +1039,10 @@ FCLCollisionDetector::createFCLCollisionGeometry(
 }
 
 //==============================================================================
-FCLCollisionDetector::FCLCollisionGeometryDeleter::FCLCollisionGeometryDeleter(
-    FCLCollisionDetector* cd,
+FCLOctomapCollisionDetector::FCLCollisionGeometryDeleter::FCLCollisionGeometryDeleter(
+    FCLOctomapCollisionDetector* cd,
     const dynamics::ConstShapePtr& shape)
-  : mFCLCollisionDetector(cd),
+  : mFCLOctomapCollisionDetector(cd),
     mShape(shape)
 {
   assert(cd);
@@ -1078,10 +1050,10 @@ FCLCollisionDetector::FCLCollisionGeometryDeleter::FCLCollisionGeometryDeleter(
 }
 
 //==============================================================================
-void FCLCollisionDetector::FCLCollisionGeometryDeleter::operator()(
+void FCLOctomapCollisionDetector::FCLCollisionGeometryDeleter::operator()(
     fcl::CollisionGeometry* geom) const
 {
-  mFCLCollisionDetector->mShapeMap.erase(mShape);
+  mFCLOctomapCollisionDetector->mShapeMap.erase(mShape);
 
   delete geom;
 }
@@ -1097,7 +1069,7 @@ bool collisionCallback(
   // Return true if you don't want more narrow phase collision checking after
   // this callback function returns, return false otherwise.
 
-  auto collData = static_cast<FCLCollisionCallbackData*>(cdata);
+  auto collData = static_cast<FCLOctomapCollisionCallbackData*>(cdata);
 
   if (collData->done)
     return true;
@@ -1136,8 +1108,8 @@ bool collisionCallback(
   if (result)
   {
     // Post processing -- converting fcl contact information to ours if needed
-    if (FCLCollisionDetector::DART == collData->contactPointComputationMethod
-        && FCLCollisionDetector::MESH == collData->primitiveShapeType)
+    if (FCLOctomapCollisionDetector::DART == collData->contactPointComputationMethod
+        && FCLOctomapCollisionDetector::MESH == collData->primitiveShapeType)
     {
       postProcessDART(fclResult, o1, o2, option, *result);
     }

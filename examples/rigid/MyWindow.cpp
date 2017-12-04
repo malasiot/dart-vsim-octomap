@@ -40,12 +40,12 @@
 using namespace std;
 using namespace Eigen;
 using namespace dart;
+using namespace dart::dynamics;
 
 //==============================================================================
 MyWindow::MyWindow()
   : SimWindow()
 {
-    mDisplayTimeout = 1 ;
 }
 
 //==============================================================================
@@ -57,6 +57,8 @@ MyWindow::~MyWindow()
 void MyWindow::timeStepping()
 {
   mWorld->step();
+  BodyNode *box = mWorld->getSkeleton("box_skeleton")->getBodyNode("box") ;
+  cout << box->getCOMSpatialVelocity().norm() << endl ;
 }
 
 //==============================================================================

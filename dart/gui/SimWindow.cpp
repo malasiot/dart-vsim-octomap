@@ -54,6 +54,7 @@
 #include "dart/dynamics/MultiSphereShape.hpp"
 #include "dart/dynamics/MeshShape.hpp"
 #include "dart/dynamics/SoftMeshShape.hpp"
+#include "dart/dynamics/CloudShape.hpp"
 #include "dart/dynamics/LineSegmentShape.hpp"
 #include "dart/dynamics/Marker.hpp"
 #include "dart/constraint/ConstraintSolver.hpp"
@@ -406,6 +407,7 @@ void SimWindow::drawShape(const dynamics::Shape* shape,
   using dynamics::MeshShape;
   using dynamics::SoftMeshShape;
   using dynamics::LineSegmentShape;
+  using dynamics::CloudShape;
 
   if (shape->is<SphereShape>())
   {
@@ -460,6 +462,14 @@ void SimWindow::drawShape(const dynamics::Shape* shape,
       mRI->drawList(mesh->getDisplayList());
     else
       mRI->drawMesh(mesh->getScale(), mesh->getMesh());
+  }
+  else if (shape->is<CloudShape>())
+  {
+    const auto& cloud = static_cast<const CloudShape*>(shape);
+
+    glDisable(GL_COLOR_MATERIAL); // Use mesh colors to draw
+
+    mRI->drawCloud(cloud->pts());
   }
   else if (shape->is<SoftMeshShape>())
   {

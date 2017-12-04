@@ -113,6 +113,11 @@ void RenderInterface::drawMesh(const Eigen::Vector3d& /*_scale*/, const aiScene*
 {
 }
 
+void RenderInterface::drawCloud(const std::vector<Eigen::Vector3f> &)
+{
+
+}
+
 void RenderInterface::drawSoftMesh(const aiMesh* /*mesh*/)
 {
   // Do nothing

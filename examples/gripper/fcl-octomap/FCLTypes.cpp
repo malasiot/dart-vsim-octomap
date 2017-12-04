@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Graphics Lab, Georgia Tech Research Corporation
- * Copyright (c) 2016, Humanoid Lab, Georgia Tech Research Corporation
+ * Copyright (c) 2015-2016, Graphics Lab, Georgia Tech Research Corporation
+ * Copyright (c) 2015-2016, Humanoid Lab, Georgia Tech Research Corporation
  * Copyright (c) 2016, Personal Robotics Lab, Carnegie Mellon University
  * All rights reserved.
  *
@@ -29,58 +29,41 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_COLLISION_FCL_FCLCOLLISIONOBJECT_HPP_
-#define DART_COLLISION_FCL_FCLCOLLISIONOBJECT_HPP_
-
-#include "fcl/collision_object.h"
-#include "dart/collision/CollisionObject.hpp"
 #include "dart/collision/fcl/FCLTypes.hpp"
 
 namespace dart {
 namespace collision {
 
-class CollisionObject;
-
-class FCLCollisionObject : public CollisionObject
+//==============================================================================
+Eigen::Vector3d FCLTypes::convertVector3(const fcl::Vec3f& _vec)
 {
-public:
+  return Eigen::Vector3d(_vec[0], _vec[1], _vec[2]);
+}
 
-  friend class FCLCollisionDetector;
+//==============================================================================
+fcl::Vec3f FCLTypes::convertVector3(const Eigen::Vector3d& _vec)
+{
+  return fcl::Vec3f(_vec[0], _vec[1], _vec[2]);
+}
 
-  struct UserData
-  {
-    CollisionObject* mCollisionObject;
+//==============================================================================
+fcl::Matrix3f FCLTypes::convertMatrix3x3(const Eigen::Matrix3d& _R)
+{
+  return fcl::Matrix3f(_R(0, 0), _R(0, 1), _R(0, 2),
+                       _R(1, 0), _R(1, 1), _R(1, 2),
+                       _R(2, 0), _R(2, 1), _R(2, 2));
+}
 
-    UserData(CollisionObject* collisionObject);
-  };
+//==============================================================================
+fcl::Transform3f FCLTypes::convertTransform(const Eigen::Isometry3d& _T)
+{
+  fcl::Transform3f trans;
 
-  /// Return FCL collision object
-  fcl::CollisionObject* getFCLCollisionObject();
+  trans.setTranslation(convertVector3(_T.translation()));
+  trans.setRotation(convertMatrix3x3(_T.linear()));
 
-  /// Return FCL collision object
-  const fcl::CollisionObject* getFCLCollisionObject() const;
-
-protected:
-
-  /// Constructor
-  FCLCollisionObject(CollisionDetector* collisionDetector,
-      const dynamics::ShapeFrame* shapeFrame,
-      const fcl_shared_ptr<fcl::CollisionGeometry>& fclCollGeom);
-
-  // Documentation inherited
-  void updateEngineData() override;
-
-protected:
-
-  /// FCL collision geometry user data
-  std::unique_ptr<UserData> mFCLCollisionObjectUserData;
-
-  /// FCL collision object
-  std::unique_ptr<fcl::CollisionObject> mFCLCollisionObject;
-
-};
+  return trans;
+}
 
 }  // namespace collision
 }  // namespace dart
-
-#endif  // DART_COLLISION_FCL_FCLCOLLISIONOBJECT_HPP_

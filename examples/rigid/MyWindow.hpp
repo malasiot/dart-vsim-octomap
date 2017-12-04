@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Graphics Lab, Georgia Tech Research Corporation
- * Copyright (c) 2016, Humanoid Lab, Georgia Tech Research Corporation
+ * Copyright (c) 2015-2016, Graphics Lab, Georgia Tech Research Corporation
+ * Copyright (c) 2015-2016, Humanoid Lab, Georgia Tech Research Corporation
  * Copyright (c) 2016, Personal Robotics Lab, Carnegie Mellon University
  * All rights reserved.
  *
@@ -14,6 +14,12 @@
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
+ *   * This code incorporates portions of Open Dynamics Engine
+ *     (Copyright (c) 2001-2004, Russell L. Smith. All rights
+ *     reserved.) and portions of FCL (Copyright (c) 2011, Willow
+ *     Garage, Inc. All rights reserved.), which were released under
+ *     the same BSD license as below
+ *
  *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
  *   CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
  *   INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -29,58 +35,49 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_COLLISION_FCL_FCLCOLLISIONOBJECT_HPP_
-#define DART_COLLISION_FCL_FCLCOLLISIONOBJECT_HPP_
+#ifndef EXAMPLES_RIGIDSHAPES_MYWINDOW_HPP_
+#define EXAMPLES_RIGIDSHAPES_MYWINDOW_HPP_
 
-#include "fcl/collision_object.h"
-#include "dart/collision/CollisionObject.hpp"
-#include "dart/collision/fcl/FCLTypes.hpp"
+#include "dart/dart.hpp"
+#include "dart/gui/gui.hpp"
 
-namespace dart {
-namespace collision {
-
-class CollisionObject;
-
-class FCLCollisionObject : public CollisionObject
+/// MyWindow
+class MyWindow : public dart::gui::SimWindow
 {
 public:
-
-  friend class FCLCollisionDetector;
-
-  struct UserData
-  {
-    CollisionObject* mCollisionObject;
-
-    UserData(CollisionObject* collisionObject);
-  };
-
-  /// Return FCL collision object
-  fcl::CollisionObject* getFCLCollisionObject();
-
-  /// Return FCL collision object
-  const fcl::CollisionObject* getFCLCollisionObject() const;
-
-protected:
-
   /// Constructor
-  FCLCollisionObject(CollisionDetector* collisionDetector,
-      const dynamics::ShapeFrame* shapeFrame,
-      const fcl_shared_ptr<fcl::CollisionGeometry>& fclCollGeom);
+  MyWindow();
+
+  /// Destructor
+  virtual ~MyWindow();
 
   // Documentation inherited
-  void updateEngineData() override;
+  void timeStepping() override;
 
-protected:
+  // Documentation inherited
+  void keyboard(unsigned char key, int x, int y) override;
 
-  /// FCL collision geometry user data
-  std::unique_ptr<UserData> mFCLCollisionObjectUserData;
+  // Documentation inherited
+  void drawWorld() const override;
 
-  /// FCL collision object
-  std::unique_ptr<fcl::CollisionObject> mFCLCollisionObject;
+  /// Spawn a box into the world
+  void spawnBox(
+      const Eigen::Isometry3d& _T,
+      const Eigen::Vector3d& _size = Eigen::Vector3d(0.1, 0.1, 0.1),
+      double _mass = 10);
 
+  /// Spawn a ellipsoid into the world
+  void spawnEllipsoid(
+      const Eigen::Isometry3d& _T,
+      const Eigen::Vector3d& _radii = Eigen::Vector3d(0.1, 0.1, 0.1),
+      double _mass = 10);
+
+  /// Spawn a cylinder into the world
+  void spawnCylinder(
+      const Eigen::Isometry3d& _T,
+      double _radius = 0.05,
+      double _height = 0.10,
+      double _mass = 10);
 };
 
-}  // namespace collision
-}  // namespace dart
-
-#endif  // DART_COLLISION_FCL_FCLCOLLISIONOBJECT_HPP_
+#endif  // EXAMPLES_RIGIDSHAPES_MYWINDOW_HPP_

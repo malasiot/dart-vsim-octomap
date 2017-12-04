@@ -41,7 +41,7 @@
 #include "dart/dynamics/Skeleton.hpp"
 
 #define DART_CFM     1e-9
-
+using namespace std ;
 namespace dart {
 namespace constraint {
 

@@ -41,6 +41,68 @@
 
 #include <fcl/config.h>
 
+using namespace dart;
+using namespace dart::dynamics ;
+using namespace std ;
+using namespace Eigen ;
+
+void createRandomBox(dart::simulation::WorldPtr world, const string &name, const Eigen::Isometry3d& _T,
+                        const Eigen::Vector3d& _size,
+                        double _mass)
+{
+  dynamics::SkeletonPtr newSkeleton = dynamics::Skeleton::create(name + "_skeleton");
+
+  dynamics::ShapePtr newShape(new dynamics::BoxShape(_size));
+
+  dynamics::BodyNode::Properties bodyProp;
+  bodyProp.mName = name ;
+  bodyProp.mFrictionCoeff = 100.0 ;
+  bodyProp.mRestitutionCoeff = 0.00 ;
+
+  dynamics::FreeJoint::Properties jointProp;
+  jointProp.mName = name + "_joint";
+  jointProp.mT_ParentBodyToJoint = _T;
+
+  pair<FreeJoint *, BodyNode *> pair = newSkeleton->createJointAndBodyNodePair<dynamics::FreeJoint>(
+        nullptr, jointProp, bodyProp);
+  BodyNode *bn = pair.second ;
+  ShapeNode *shapeNode = pair.second->createShapeNodeWith<
+      dynamics::VisualAspect,
+      dynamics::CollisionAspect,
+      dynamics::DynamicsAspect>(newShape);
+  shapeNode->getVisualAspect()->setColor(Vector3d(0.1, 0.1, 0.1));
+
+  Inertia inertia;
+  inertia.setMass(1000 * newShape->getVolume());
+  inertia.setMoment(newShape->computeInertia(inertia.getMass()));
+  bn->setInertia(inertia);
+
+  // Set the spring and damping coefficients for the degrees of freedom
+  for(std::size_t i=6; i < newSkeleton->getNumDofs(); ++i)
+  {
+    DegreeOfFreedom* dof = newSkeleton->getDof(i);
+    dof->setSpringStiffness(1);
+    dof->setDampingCoefficient(0.1);
+  }
+  world->addSkeleton(newSkeleton);
+}
+
+Isometry3d getRandTransform(double d)
+{
+  Isometry3d T = Isometry3d::Identity();
+
+  const Vector3d rotation = math::randomVector<3>(-math::constantsd::pi(),
+                                                   math::constantsd::pi());
+  const Vector3d position = Vector3d(math::random(-0.4, 0.4),
+                                     math::random( d, d + 0.1),
+                                     math::random(-0.4, 0.4));
+
+  T.translation() = position;
+  T.linear() = math::expMapRot(rotation);
+
+  return T;
+}
+
 int main(int argc, char* argv[])
 {
   // load a skeleton file
@@ -48,6 +110,18 @@ int main(int argc, char* argv[])
   dart::simulation::WorldPtr myWorld
       = dart::utils::SkelParser::readWorld(DART_DATA_PATH"skel/tray.skel");
   assert(myWorld != NULL);
+
+  for( uint i=0 ; i< 100 ; i++ ) {
+      stringstream bname ;
+      bname << "box_" << i ;
+      createRandomBox(myWorld, bname.str(), getRandTransform(0.1), Vector3d(0.01, math::random(0.05, 0.1), 0.01), 0.1) ;
+  }
+
+  for( uint i=0 ; i< 100 ; i++ ) {
+      stringstream bname ;
+      bname << "box_" << i+100 ;
+      createRandomBox(myWorld, bname.str(), getRandTransform(0.3), Vector3d(0.005, math::random(0.05, 0.1), 0.01), 0.1) ;
+  }
 
   // create a window and link it to the world
   MyWindow window;
@@ -60,7 +134,7 @@ int main(int argc, char* argv[])
   std::cout << "'a': delete a spawned object at last" << std::endl;
 
   glutInit(&argc, argv);
-  window.initWindow(640, 480, "Rigid Shapes");
+  window.initWindow(640, 480, "Rigid Cubes Falling");
   glutMainLoop();
 
   return 0;

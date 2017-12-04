@@ -21,6 +21,11 @@ dart_check_required_package(CCD "libccd")
 find_package(FCL 0.2.9 REQUIRED)
 dart_check_required_package(FCL "fcl")
 
+# FCL
+find_package(Octomap 1.8.0 REQUIRED)
+dart_check_required_package(Octomap "octomap")
+
+
 # ASSIMP
 find_package(ASSIMP 3.0.0 REQUIRED)
 dart_check_required_package(ASSIMP "assimp")

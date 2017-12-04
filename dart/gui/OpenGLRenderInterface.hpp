@@ -87,6 +87,7 @@ public:
     void drawCapsule(double radius, double height) override;
     void drawCone(double radius, double height) override;
     void drawMesh(const Eigen::Vector3d& _scale, const aiScene* _mesh) override;
+    void drawCloud(const std::vector<Eigen::Vector3f> &) override ;
     void drawSoftMesh(const aiMesh* mesh) override;
     void drawList(GLuint index) override;
     void drawLineSegments(const std::vector<Eigen::Vector3d>& _vertices,

@@ -35,33 +35,58 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
+#ifndef EXAMPLES_RIGIDSHAPES_MYWINDOW_HPP_
+#define EXAMPLES_RIGIDSHAPES_MYWINDOW_HPP_
+
 #include "dart/dart.hpp"
-#include "MyWindow.hpp"
+#include "dart/gui/gui.hpp"
+#include "gripper.hpp"
 
-#include <fcl/config.h>
-
-int main(int argc, char* argv[])
+/// MyWindow
+class MyWindow : public dart::gui::SimWindow
 {
-  // load a skeleton file
-  // create and initialize the world
-  dart::simulation::WorldPtr myWorld
-      = dart::utils::SkelParser::readWorld(DART_DATA_PATH"skel/tray.skel");
-  assert(myWorld != NULL);
+public:
+  /// Constructor
+  MyWindow();
 
-  // create a window and link it to the world
-  MyWindow window;
-  window.setWorld(myWorld);
+  void setGripper(Gripper *gripper) {
+      gripper_ = gripper ;
+  }
 
-  std::cout << "space bar: simulation on/off" << std::endl;
-  std::cout << "'q': spawn a random cube" << std::endl;
-  std::cout << "'w': spawn a random ellipsoid" << std::endl;
-  std::cout << "'e': spawn a random cylinder" << std::endl;
-  std::cout << "'a': delete a spawned object at last" << std::endl;
+  /// Destructor
+  virtual ~MyWindow();
 
-  glutInit(&argc, argv);
-  window.initWindow(640, 480, "Rigid Shapes");
-  glutMainLoop();
+  // Documentation inherited
+  void timeStepping() override;
 
-  return 0;
-}
+  // Documentation inherited
+  void keyboard(unsigned char key, int x, int y) override;
+
+  // Documentation inherited
+  void drawWorld() const override;
+
+  /// Spawn a box into the world
+  void spawnBox(
+      const Eigen::Isometry3d& _T,
+      const Eigen::Vector3d& _size = Eigen::Vector3d(0.1, 0.1, 0.1),
+      double _mass = 10);
+
+  /// Spawn a ellipsoid into the world
+  void spawnEllipsoid(
+      const Eigen::Isometry3d& _T,
+      const Eigen::Vector3d& _radii = Eigen::Vector3d(0.1, 0.1, 0.1),
+      double _mass = 10);
+
+  /// Spawn a cylinder into the world
+  void spawnCylinder(
+      const Eigen::Isometry3d& _T,
+      double _radius = 0.05,
+      double _height = 0.10,
+      double _mass = 10);
+
+  Gripper *gripper_ ;
+  double gt_ = -0.12 ;
+  bool remove_ground_ = false ;
+};
+
+#endif  // EXAMPLES_RIGIDSHAPES_MYWINDOW_HPP_
