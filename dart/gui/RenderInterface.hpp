@@ -97,7 +97,7 @@ public:
     virtual void drawCapsule(double _radius, double _height);
     virtual void drawCone(double _radius, double _height);
     virtual void drawMesh(const Eigen::Vector3d& _scale, const aiScene* _mesh);
-    virtual void drawCloud(const std::vector<Eigen::Vector3f> &pts);
+    virtual void drawCloud(const std::vector<Eigen::Vector3f> &pts, const Eigen::Vector3f &sc);
     virtual void drawSoftMesh(const aiMesh* mesh);
     virtual void drawList(unsigned int index);
     virtual void drawLineSegments(const std::vector<Eigen::Vector3d>& _vertices,

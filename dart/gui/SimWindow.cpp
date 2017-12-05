@@ -467,9 +467,9 @@ void SimWindow::drawShape(const dynamics::Shape* shape,
   {
     const auto& cloud = static_cast<const CloudShape*>(shape);
 
-    glDisable(GL_COLOR_MATERIAL); // Use mesh colors to draw
+ //   glDisable(GL_COLOR_MATERIAL); // Use mesh colors to draw
 
-    mRI->drawCloud(cloud->pts());
+    mRI->drawCloud(cloud->pts(), cloud->scale());
   }
   else if (shape->is<SoftMeshShape>())
   {

@@ -645,16 +645,17 @@ fcl::BVHModel<BV>* createSoftMesh(const aiMesh* _mesh)
 } // anonymous namespace
 
 //==============================================================================
-template<class BV>
-fcl::OcTree* createOctomap(const std::vector<Eigen::Vector3f> &pts)
+
+fcl::OcTree* createOctomap(const std::vector<Eigen::Vector3f> &pts, const Eigen::Vector3f &scale, float res)
 {
     octomap::Pointcloud cloud ;
 
     for( uint i=0 ; i<pts.size() ; i++ ) {
-        cloud.push_back(pts[i].x(), pts[i].y(), pts[i].z());
+
+        cloud.push_back(pts[i].x() * scale.x(), pts[i].y() * scale.y(), pts[i].z() * scale.z());
     }
 
-    std::shared_ptr<octomap::OcTree> octree(new octomap::OcTree(0.001)) ;
+    std::shared_ptr<octomap::OcTree> octree(new octomap::OcTree(res)) ;
 
     octree->insertPointCloud(cloud, octomap::point3d(0, 0, 0));
 
@@ -1051,7 +1052,7 @@ FCLCollisionDetector::createFCLCollisionGeometry(
 
     auto cloudShape = static_cast<const dynamics::CloudShape*>(shape.get());
 
-    geom = createOctomap<fcl::OBBRSS>(cloudShape->pts());
+    geom = createOctomap(cloudShape->pts(), cloudShape->scale(), cloudShape->getOctomapResolution());
   }
   else
   {

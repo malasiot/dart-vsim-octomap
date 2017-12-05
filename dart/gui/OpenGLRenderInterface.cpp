@@ -508,13 +508,19 @@ void OpenGLRenderInterface::drawMesh(
   glPopMatrix();
 }
 
-void OpenGLRenderInterface::drawCloud(const std::vector<Eigen::Vector3f> &pts)
+void OpenGLRenderInterface::drawCloud(const std::vector<Eigen::Vector3f> &pts, const Eigen::Vector3f &scale)
 {
+    glPushMatrix();
+
+    glScalef(scale[0], scale[1], scale[2]);
+
     glBegin(GL_POINTS);
     for(int i=0 ; i<pts.size() ; i++)   {
         glVertex3f(pts[i].x(), pts[i].y(), pts[i].z());
     }
     glEnd();
+
+    glPopMatrix() ;
 }
 
 //==============================================================================

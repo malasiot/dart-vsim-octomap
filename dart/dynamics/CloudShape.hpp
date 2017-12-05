@@ -13,10 +13,13 @@ public:
 
 
   /// \brief Constructor.
-  CloudShape(const std::vector<Eigen::Vector3f> &pts): pts_(pts) {
+  CloudShape(const std::vector<Eigen::Vector3f> &pts, const Eigen::Vector3f &scale = {1.0, 1.0, 1.0} ): pts_(pts), scale_(scale) {
       _updateBoundingBoxDim();
       updateVolume();
   }
+
+  void setOctomapResolution(float res) { octomap_res_ = res ; }
+  float getOctomapResolution() const { return octomap_res_ ; }
 
   /// \brief Destructor.
   virtual ~CloudShape() {}
@@ -27,9 +30,11 @@ public:
   /// Returns shape type for this class
   static const std::string& getStaticType();
 
-   Eigen::Matrix3d computeInertia(double mass) const override;
+  Eigen::Matrix3d computeInertia(double mass) const override;
 
-   const std::vector<Eigen::Vector3f> &pts() const { return pts_ ; }
+  const std::vector<Eigen::Vector3f> &pts() const { return pts_ ; }
+
+  const Eigen::Vector3f &scale() const { return scale_ ; }
 
 protected:
 
@@ -38,6 +43,8 @@ protected:
    void _updateBoundingBoxDim() ;
 
    std::vector<Eigen::Vector3f> pts_;
+   Eigen::Vector3f scale_ ;
+   float octomap_res_ ;
 
 public:
   // To get byte-aligned Eigen vectors
